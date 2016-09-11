@@ -1,4 +1,16 @@
+//#############################################################################
+/*
+Neste arquivo você encontrará todas as classes e métodos para o Player
 
+sfLine - Uma Classe para desenhar uma linha
+sfText - Uma classe de texto que carrega uma fonte padrão do ubuntu
+MyBuffer - Uma classe para gerenciar o buffer de estados
+MyColors - Uma classe singleton para gerenciar o mapa de cores
+MyWindow - Uma RenderWindow singleton para o projeto
+MyPlayer - Contem os singleton player de estados e o RenderBuffer de Desenho
+MyPathMaker - Calcula linhas e posições, utilizado para desenhar
+
+*/
 //#############################################################################
 
 #ifndef SFLINE_H
@@ -183,7 +195,7 @@ public:
 
     void push(const T& t){
         _list.push_back(t);
-        if(size() > _max_size){
+        if(size() > (int)_max_size){
             _list.pop_front();
             _first++;
             if(_indice > 0)
@@ -404,8 +416,8 @@ public:
 
 #include <SFML/Graphics.hpp>
 
-#define my_player (MyPlayer::instance())
-#define my_painel (MyPlayer::instance()->painel)
+//#define my_player (MyPlayer::instance())
+//#define my_painel (MyPlayer::instance()->painel)
 
 class MyPlayer{
 private:
@@ -414,6 +426,7 @@ private:
     bool _state_missing{false};
     bool _waiting{false};
     int _destiny{0};//proximo estado a ser mostrado
+
 
     MyPlayer():
         _buffer(100, sf::Texture())
@@ -424,10 +437,10 @@ private:
 public:
     sf::Color color_back{sf::Color::Black};
     sf::Color color_front{sf::Color::White};
-    sf::RenderTexture painel;
     const uint offset_up = 40;
     bool autoplay{false};
     bool autopush{true};
+    sf::RenderTexture painel;
     int jump{1}; //define o tamanho do salto
 
 
@@ -436,6 +449,11 @@ public:
         static MyPlayer _player;
         return &_player;
     }
+
+    static sf::RenderTexture * getPainel(){
+        return &instance()->painel;
+    }
+
 
     //Espera a janela ser fechada
     //se estava esperando um salto de varios estados,
@@ -493,7 +511,7 @@ private:
                 MyWindow::instance()->processar_close(evt);
                 process_controles(evt);
                 if(evt.type == sf::Event::KeyPressed){
-                    if(evt.key.code == sf::Keyboard::Return){
+                    if(evt.key.code == sf::Keyboard::Escape){
                         if(_waiting)
                             return;
                     }
@@ -524,7 +542,7 @@ private:
         if(evt.type == sf::Event::KeyPressed){
             if(evt.key.code == sf::Keyboard::Right){walk(jump);}
             else if(evt.key.code == sf::Keyboard::Left){walk(-jump); autoplay = false;}
-            else if(evt.key.code == sf::Keyboard::RShift){autoplay = !autoplay;}
+            else if(evt.key.code == sf::Keyboard::Return){autoplay = !autoplay;}
             else if(evt.key.code == sf::Keyboard::Up){if(jump < 500) jump *= 2;}
             else if(evt.key.code == sf::Keyboard::Down){if(jump > 1) jump /= 2;}
         }
@@ -543,13 +561,13 @@ private:
         MyWindow::instance()->draw(sfText(sf::Vector2f(0, 0), title_left, color_front));
         std::string state = estado;
         if(_waiting)
-            state += "(Fim. Digite Enter para Sair!)";
+            state += "(Fim. Digite Esc para Sair!)";
         else
             state += "(Processando)";
         MyWindow::instance()->draw(sfText(sf::Vector2f(0, 20), state, color_front));
 
         std::string title_right = " Step  Move |  Speed  | Autoplay";
-        std::string teclas =      " Left/Right | Up/Down | RShift  ";
+        std::string teclas =      " Left/Right | Up/Down | Enter   ";
 
         std::string autoOp =      "                              ##";
 
@@ -676,7 +694,7 @@ private:
 void get_anything(){
     char c;
     cin >> noskipws >> c;
-    cin.ignore(1000, '\n');
+    //cin.ignore(1000, '\n');
 }
 
 void clear() {
@@ -686,3 +704,42 @@ void clear() {
 }
 
 #endif
+
+
+#ifndef ED_H
+#define ED_H
+
+//BASE FUNCTIONS
+
+//salva o buffer e mostra o novo estado
+void ed_show(){
+    MyPlayer::instance()->show();
+}
+
+//trava o player para nao terminar a simulação
+void ed_lock(){
+    MyPlayer::instance()->wait();
+}
+
+
+//SETS
+//faz a janeja aparecer ou desaparecer
+void ed_set_visible(bool value){
+    MyWindow::instance()->setVisible(value);
+}
+
+//configura o tamanho default da janela
+void ed_set_size(int largura, int altura){
+    MyWindow::instance()->setSize(sf::Vector2u(largura, altura));
+}
+
+//seta o autoplayer pra true ou false
+void ed_set_autoplay(bool value){
+    MyPlayer::instance()->autoplay = value;
+}
+
+//adiciona ou muda uma cor do mapa de cores
+void ed_set_color(char color, int R, int G, int B){
+    my_colors->set(color, R, G, B);
+}
+#endif // ED_H

@@ -1,8 +1,24 @@
-#include "libs/view.h"
-#include "aluno/jogo_velha.h"
-#include "aluno/exemplo_lab.h"
-#include "aluno/teste_matrizes.h"
+#include "libs/ed_base.h"
+#include "libs/ed_mat.h"
+
+#include <fstream>
+#include <iostream>
+#include <cstdlib>
+#include <ctime>
 #include <vector>
+using namespace std;
+
+int nlinhas = 20;
+int ncolunas = 35;
+
+//r red
+//g green
+//b blue
+//m magenta
+//c cyan -
+//y yellow
+//w white
+//k black
 
 vector<Par> achar_vizinhos(Par par){
     vector<Par> vizinhos;
@@ -18,21 +34,26 @@ vector<Par> shuffle(vector<Par> &vizinhos){
     for(int i = 0; i < (int) vizinhos.size(); i++){
         std::swap(vizinhos[i], vizinhos[rand() % (int) vizinhos.size()]);
     }
-
     return vizinhos;
 }
 
+bool eh_valido(matchar &mat, Par p){
+    if(p.l < 1 || p.l >= mat.sizeL() - 1)
+        return false;
+    if(p.c < 1 || p.c >= mat.sizeC() - 1)
+        return false;
+
+    return true;
+}
+
 bool eh_furavel(matchar &mat, Par par){
-    if(par.l < 1 || par.l >= mat.sizeL() - 1){
+    if(!eh_valido(mat, par))
         return false;
-    }
-    if(par.c < 1 || par.c >= mat.sizeC() - 1){
+    if(!mat.is_inside(par))
         return false;
-    }
 
     int cont = 0;
     auto vet = achar_vizinhos(par);
-
     for(auto par : vet){
         if(mat.get(par) == 'w'){
             cont++;
@@ -47,86 +68,83 @@ bool eh_furavel(matchar &mat, Par par){
 }
 
 void desenhar_labirinto(matchar &mat, Par par){
-    if(par.l < 1 || par.l >= mat.sizeL() - 1){
+    if(!eh_valido(mat, par))
         return;
-    }
-    if(par.c < 1 || par.c >= mat.sizeC() - 1){
+    if(!mat.is_inside(par))
         return;
-    }
 
     if(mat.get(par) == 'k'){
         mat.get(par) = 'w';
-        my_view->paint(mat);
-
+        mat_draw(mat);
+        ed_show();
         auto vet = achar_vizinhos(par);
         vet = shuffle(vet);
         for(auto par : vet){
             if(eh_furavel(mat, par)){
                 desenhar_labirinto(mat, par);
-
             }
         }
 
-        return ;
+        return;
     }
-
     return;
 }
 
-bool eh_caminho(matchar &mat, Par par, Par destino){
-    if(par.l < 0 || par.l >= mat.sizeL()){
+bool eh_caminho(matchar &mat, Par origem, Par destino){
+    if(!eh_valido(mat, origem))
         return false;
-    }
-    if(par.c < 0 || par.c >= mat.sizeC()){
+    if(!eh_valido(mat, destino))
         return false;
-    }
-
-    if(par == destino){
-        mat.get(par) = 'y';
-        my_view->paint(mat);
+    if(origem == destino){
+        mat.get(origem) = 'y';
+        mat_draw(mat);
+        ed_show();
         return true;
     }
 
-    if(mat.get(par) == 'w'){
-        mat.get(par) = 'r';
-        my_view->paint(mat);
+    if(mat.get(origem) == 'w'){
+        mat.get(origem) = 'r';
+        mat_draw(mat);
+        ed_show();
 
-        auto vet = achar_vizinhos(par);
+        auto vet = achar_vizinhos(origem);
         vet = shuffle(vet);
         for(auto vizinho : vet){
             if(eh_caminho(mat, vizinho, destino)){
                 mat.get(vizinho) = 'y';
-                my_view->paint(mat);
+                mat_draw(mat);
+                ed_show();
                 return true;
             }
         }
 
-        mat.get(par) = 'b';
-        my_view->paint(mat);
-
+        mat.get(origem) = 'b';
+        mat_draw(mat);
+        ed_show();
         return false;
     }
-
     return false;
 }
 
 int main(){
     matchar mat(15, 20, 'k');
 
-    Par inicio = my_view->select_point(mat, "Selecione o que inicia o labirinto");
+    Par inicio = mat_get_click(mat, "Selecione o que inicia o labirinto");
 
     desenhar_labirinto(mat, inicio);
-    my_view->paint(mat);
+    mat_draw(mat);
+    ed_show();
 
-    Par p = my_view->select_point(mat, "Selecione o ponto inicial");
-    Par destino = my_view->select_point(mat, "Selecione o ponto destino");
+    Par origem = mat_get_click(mat, "Selecione o ponto origem: ");
+    Par destino = mat_get_click(mat, "Selecione o ponto destino: ");
 
-    eh_caminho(mat, p, destino);
-    mat.get(p) = 'y';
+    eh_caminho(mat, origem, destino);
+    mat.get(origem) = 'y';
 
-    my_view->paint(mat);
+    mat_draw(mat);
+    ed_show();
 
-    my_view->wait();
+    ed_lock();
 
     return 0;
 }
