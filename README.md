@@ -1,2 +1,2 @@
-# my_projects
-Projetos desenvolvidos por mim.
+# atividades_ed
+Projetos desenvolvidos durante a disciplina de Estrutura de dados na UFC - Campus Quixadá.
